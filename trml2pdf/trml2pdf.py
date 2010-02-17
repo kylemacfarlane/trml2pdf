@@ -62,7 +62,7 @@ class _rml_styles(object):
 		for attr in ['textColor', 'backColor', 'bulletColor']:
 			if node.hasAttribute(attr):
 				style.__dict__[attr] = color.get(node.getAttribute(attr))
-		for attr in ['fontName', 'bulletFontName', 'bulletText']:
+		for attr in ['fontName', 'bulletFontName', 'bulletText', 'wordWrap']:
 			if node.hasAttribute(attr):
 				style.__dict__[attr] = node.getAttribute(attr)
 		for attr in ['fontSize', 'leftIndent', 'rightIndent', 'spaceBefore', 'spaceAfter', 'firstLineIndent', 'bulletIndent', 'bulletFontSize', 'leading']:
