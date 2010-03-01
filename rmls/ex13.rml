@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
+<!DOCTYPE document SYSTEM "rml_1_0.dtd">
+<document filename="example_12.pdf">
+  <template>
+    <pageTemplate id="main">
+      <pageGraphics>
+      </pageGraphics>
+      <frame id="first" x1="72" y1="72" width="451" height="698"/>
+    </pageTemplate>
+  </template>
+  <stylesheet>
+    <blockTableStyle id="myBlockTableStyle">
+      <lineStyle kind="GRID" colorName="darkblue"/>
+    </blockTableStyle>
+    <paraStyle name="paddingTableStyle"
+               fontName="Helvetica-BoldOblique"
+               fontSize="10"
+               textColor="white"
+               alignment="CENTER"
+               />
+  </stylesheet>
+  <story>
+    <title>Example 13 - barcodes</title>
+    <spacer length="1cm"/>
+    <blockTable style="myBlockTableStyle" colWidths="91, 300">
+      <tr>
+	<td><para>Symbolism</para></td>
+	<td><para>Barcode</para></td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Code128</para>
+	</td>
+	<td>
+	  <barCode barWidth="1">ABCxyz#$%15z</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Codabar</para>
+	</td>
+	<td>
+	  <barCode code="codabar" barWidth="1">0123456789-$\:/.+</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Code11</para>
+	</td>
+	<td>
+	  <barCode code="code11" barWidth="1">0123589</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>I2of5</para>
+	</td>
+	<td>
+	  <barCode code="i2of5" barWidth="1">00123456789</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>MSI</para>
+	</td>
+	<td>
+	  <barCode code="msi" barWidth="1">12345</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Standard39</para>
+	</td>
+	<td>
+	  <barCode code="standard39" barWidth="1">CODE 39</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Extended39</para>
+	</td>
+	<td>
+	  <barCode code="extended39" barWidth="1">CODE 39</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Standard93</para>
+	</td>
+	<td>
+	  <barCode code="standard93" barWidth="1">CODE 93</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>Extended93</para>
+	</td>
+	<td>
+	  <barCode code="extended93" barWidth="1">CODE 93</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>FIM</para>
+	</td>
+	<td>
+	  <barCode code="fim" barWidth="1">fima</barCode>
+	</td>
+      </tr>
+      <tr>
+	<td>
+	  <para>POSTNET</para>
+	</td>
+	<td>
+	  <barCode code="postnet" barWidth="1">012345</barCode>
+	</td>
+      </tr>
+    </blockTable>
+  </story>
+</document>
