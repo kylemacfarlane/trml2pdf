@@ -103,6 +103,8 @@ class _rml_styles(object):
 					styles.append(('BOTTOMPADDING', start, stop, utils.unit_get(node.getAttribute('length'))))
 				elif node.localName=='blockBackground':
 					styles.append(('BACKGROUND', start, stop, color.get(node.getAttribute('colorName'))))
+				elif node.localName=='blockSpan':
+					styles.append(('SPAN', start, stop))
 				if node.hasAttribute('size'):
 					styles.append(('FONTSIZE', start, stop, utils.unit_get(node.getAttribute('size'))))
 				elif node.localName=='lineStyle':
