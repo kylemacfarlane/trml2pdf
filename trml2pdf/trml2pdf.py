@@ -28,6 +28,21 @@ import copy
 import reportlab
 from reportlab.pdfgen import canvas
 from reportlab import platypus
+try:
+	from reportlab.graphics.barcode.common import Codabar, Code11, I2of5, MSI
+	from reportlab.graphics.barcode.code128 import Code128
+	from reportlab.graphics.barcode.code39 import Standard39, Extended39
+	from reportlab.graphics.barcode.code93 import Standard93, Extended93
+	from reportlab.graphics.barcode.usps import FIM, POSTNET
+	barcode_codes = dict(codabar=Codabar, code11=Code11, code128=Code128,
+			     standard39=Standard39, extended39=Extended39, 
+			     standard93=Standard93, extended93=Extended93,
+			     i2of5=I2of5, msi=MSI, fim=FIM, postnet=POSTNET)
+except ImportError:
+	barcode_codes = {}
+	raise 
+	pass
+	
 
 import utils
 import color
@@ -481,6 +496,9 @@ class _rml_flowable(object):
 			return platypus.NextPageTemplate(str(node.getAttribute('name')))
 		elif node.localName=='nextFrame':
 			return platypus.CondPageBreak(1000)           # TODO: change the 1000 !
+		elif barcode_codes and node.localName=='barCode':
+			code = barcode_codes.get(node.getAttribute('code'), Code128)
+			return code(self._textual(node), **utils.attr_get(node, ['barWidth', 'barHeight']))
 		else:
 			sys.stderr.write('Warning: flowable not yet implemented: %s !\n' % (node.localName,))
 			return None
