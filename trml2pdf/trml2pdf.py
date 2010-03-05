@@ -40,9 +40,7 @@ try:
 			     i2of5=I2of5, msi=MSI, fim=FIM, postnet=POSTNET)
 except ImportError:
 	barcode_codes = {}
-	raise 
 	pass
-	
 
 import utils
 import color
