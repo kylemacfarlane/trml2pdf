@@ -45,11 +45,6 @@ except ImportError:
 import utils
 import color
 
-#
-# Change this to UTF-8 if you plan tu use Reportlab's UTF-8 support
-#
-encoding = 'latin1'
-
 def _child_get(node, childs):
 	clds = []
 	for n in node.childNodes:
@@ -149,9 +144,10 @@ class _rml_styles(object):
 		return self._para_style_update(style, node)
 
 class _rml_doc(object):
-	def __init__(self, data):
+	def __init__(self, data, encoding):
 		self.dom = xml.dom.minidom.parseString(data)
 		self.filename = self.dom.documentElement.getAttribute('filename')
+                self.encoding = encoding
 
 	def docinit(self, els):
 		from reportlab.lib.fonts import addMapping
@@ -178,22 +174,23 @@ class _rml_doc(object):
 
 		el = self.dom.documentElement.getElementsByTagName('template')
 		if len(el):
-			pt_obj = _rml_template(out, el[0], self)
+			pt_obj = _rml_template(out, el[0], self, self.encoding)
 			pt_obj.render(self.dom.documentElement.getElementsByTagName('story')[0])
 		else:
 			self.canvas = canvas.Canvas(out)
 			pd = self.dom.documentElement.getElementsByTagName('pageDrawing')[0]
-			pd_obj = _rml_canvas(self.canvas, None, self)
+			pd_obj = _rml_canvas(self.canvas, None, self, self.encoding)
 			pd_obj.render(pd)
 			self.canvas.showPage()
 			self.canvas.save()
 
 class _rml_canvas(object):
-	def __init__(self, canvas, doc_tmpl=None, doc=None):
+	def __init__(self, canvas, doc_tmpl=None, doc=None, encoding=None):
 		self.canvas = canvas
 		self.styles = doc.styles
 		self.doc_tmpl = doc_tmpl
 		self.doc = doc
+                self.encoding = encoding
 
 	def _textual(self, node):
 		rc = ''
@@ -205,7 +202,7 @@ class _rml_canvas(object):
 				rc += n.data
 			elif (n.nodeType == node.TEXT_NODE):
 				rc += n.data
-		return rc.encode(encoding)
+		return rc.encode(self.encoding)
 
 	def _drawString(self, node):
 		self.canvas.drawString(text=self._textual(node), **utils.attr_get(node, ['x','y']))
@@ -254,7 +251,7 @@ class _rml_canvas(object):
 		self.canvas.circle(x_cen=utils.unit_get(node.getAttribute('x')), y_cen=utils.unit_get(node.getAttribute('y')), r=utils.unit_get(node.getAttribute('radius')), **utils.attr_get(node, [], {'fill':'bool','stroke':'bool'}))
 
 	def _place(self, node):
-		flows = _rml_flowable(self.doc).render(node)
+		flows = _rml_flowable(self.doc, self.encoding).render(node)
 		infos = utils.attr_get(node, ['x','y','width','height'])
 
 		infos['y']+=infos['height']
@@ -363,21 +360,23 @@ class _rml_canvas(object):
 						break
 
 class _rml_draw(object):
-	def __init__(self, node, styles):
+	def __init__(self, node, styles, encoding):
 		self.node = node
 		self.styles = styles
 		self.canvas = None
+                self.encoding = encoding
 
 	def render(self, canvas, doc):
 		canvas.saveState()
-		cnv = _rml_canvas(canvas, doc, self.styles)
+		cnv = _rml_canvas(canvas, doc, self.styles, self.encoding)
 		cnv.render(self.node)
 		canvas.restoreState()
 
 class _rml_flowable(object):
-	def __init__(self, doc):
+	def __init__(self, doc, encoding):
 		self.doc = doc
 		self.styles = doc.styles
+                self.encoding = encoding
 
 	def _textual(self, node):
 		rc = ''
@@ -396,7 +395,7 @@ class _rml_flowable(object):
 				rc += n.data
 			elif (n.nodeType == node.TEXT_NODE):
 				rc += n.data
-		return rc.encode(encoding)
+		return rc.encode(self.encoding)
 
 	_cell_cmds = {
 		"align":"ALIGN",
@@ -471,7 +470,7 @@ class _rml_flowable(object):
 				return (self.width, self.height)
 			def draw(self):
 				canvas = self.canv
-				drw = _rml_draw(self.node, self.styles)
+				drw = _rml_draw(self.node, self.styles, self.encoding)
 				drw.render(self.canv, None)
 		return Illustration(node, self.styles)
 
@@ -544,7 +543,8 @@ class _rml_flowable(object):
 		return story
 
 class _rml_template(object):
-	def __init__(self, out, node, doc):
+	def __init__(self, out, node, doc, encoding):
+                self.encoding = encoding
 		if not node.hasAttribute('pageSize'):
 			pageSize = (utils.unit_get('21cm'), utils.unit_get('29.7cm'))
 		else:
@@ -563,19 +563,21 @@ class _rml_template(object):
 				frames.append( frame )
 			gr = pt.getElementsByTagName('pageGraphics')
 			if len(gr):
-				drw = _rml_draw(gr[0], self.doc)
+				drw = _rml_draw(gr[0], self.doc, self.encoding)
 				self.page_templates.append( platypus.PageTemplate(frames=frames, onPage=drw.render, **utils.attr_get(pt, [], {'id':'str'}) ))
 			else:
 				self.page_templates.append( platypus.PageTemplate(frames=frames, **utils.attr_get(pt, [], {'id':'str'}) ))
 		self.doc_tmpl.addPageTemplates(self.page_templates)
 
 	def render(self, node_story):
-		r = _rml_flowable(self.doc)
+		r = _rml_flowable(self.doc, self.encoding)
 		fis = r.render(node_story)
 		self.doc_tmpl.build(fis)
 
-def parseString(data, fout=None):
-	r = _rml_doc(data)
+def parseString(data, fout=None, encoding=None):
+        if encoding is None:
+            encoding = 'latin-1'
+	r = _rml_doc(data, encoding)
 	if fout:
 		fp = file(fout,'wb')
 		r.render(fp)
@@ -595,7 +597,8 @@ if __name__=="__main__":
 	if len(sys.argv)>1:
 		if sys.argv[1]=='--help':
 			trml2pdf_help()
-		print parseString(file(sys.argv[1], 'r').read()),
+                encoding = sys.argv[2] if len(sys.argv) > 2 else None
+		print parseString(file(sys.argv[1], 'r').read(), encoding=encoding),
 	else:
 		print 'Usage: trml2pdf input.rml >output.pdf'
 		print 'Try \'trml2pdf --help\' for more information.'
