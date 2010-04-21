@@ -20,6 +20,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
 import sys
 import StringIO
 import xml.dom.minidom
@@ -144,10 +145,11 @@ class _rml_styles(object):
 		return self._para_style_update(style, node)
 
 class _rml_doc(object):
-	def __init__(self, data, encoding):
+	def __init__(self, data, encoding, asset_dirs):
 		self.dom = xml.dom.minidom.parseString(data)
 		self.filename = self.dom.documentElement.getAttribute('filename')
                 self.encoding = encoding
+                self.asset_dirs = asset_dirs
 
 	def docinit(self, els):
 		from reportlab.lib.fonts import addMapping
@@ -174,23 +176,24 @@ class _rml_doc(object):
 
 		el = self.dom.documentElement.getElementsByTagName('template')
 		if len(el):
-			pt_obj = _rml_template(out, el[0], self, self.encoding)
+			pt_obj = _rml_template(out, el[0], self, self.encoding, self.asset_dirs)
 			pt_obj.render(self.dom.documentElement.getElementsByTagName('story')[0])
 		else:
 			self.canvas = canvas.Canvas(out)
 			pd = self.dom.documentElement.getElementsByTagName('pageDrawing')[0]
-			pd_obj = _rml_canvas(self.canvas, None, self, self.encoding)
+			pd_obj = _rml_canvas(self.canvas, None, self, self.encoding, self.asset_dirs)
 			pd_obj.render(pd)
 			self.canvas.showPage()
 			self.canvas.save()
 
 class _rml_canvas(object):
-	def __init__(self, canvas, doc_tmpl=None, doc=None, encoding=None):
+	def __init__(self, canvas, doc_tmpl=None, doc=None, encoding=None, asset_dirs=None):
 		self.canvas = canvas
 		self.styles = doc.styles
 		self.doc_tmpl = doc_tmpl
 		self.doc = doc
                 self.encoding = encoding
+                self.asset_dirs = asset_dirs
 
 	def _textual(self, node):
 		rc = ''
@@ -251,7 +254,7 @@ class _rml_canvas(object):
 		self.canvas.circle(x_cen=utils.unit_get(node.getAttribute('x')), y_cen=utils.unit_get(node.getAttribute('y')), r=utils.unit_get(node.getAttribute('radius')), **utils.attr_get(node, [], {'fill':'bool','stroke':'bool'}))
 
 	def _place(self, node):
-		flows = _rml_flowable(self.doc, self.encoding).render(node)
+		flows = _rml_flowable(self.doc, self.encoding, self.asset_dirs).render(node)
 		infos = utils.attr_get(node, ['x','y','width','height'])
 
 		infos['y']+=infos['height']
@@ -281,10 +284,19 @@ class _rml_canvas(object):
 				dashes[x]=utils.unit_get(dashes[x])
 			self.canvas.setDash(node.getAttribute('dash').split(','))
 
-	def _image(self, node):
+        def _load_asset(self, asset):
 		import urllib
+                for path in self.asset_dirs:
+                    try:
+                        # The "file:" prevents urllib from choking on Windows paths
+                        return urllib.urlopen(os.path.join('file:' + path, asset))
+                    except IOError:
+                        pass
+                raise IOError("Unable to find the file '%s' on any of the following paths: %s" % (asset, self.asset_dirs))
+
+	def _image(self, node):
 		from reportlab.lib.utils import ImageReader
-		u = urllib.urlopen(str(node.getAttribute('file')))
+                u = self._load_asset(str(node.getAttribute('file')))
 		s = StringIO.StringIO()
 		s.write(u.read())
 		s.seek(0)
@@ -360,23 +372,25 @@ class _rml_canvas(object):
 						break
 
 class _rml_draw(object):
-	def __init__(self, node, styles, encoding):
+	def __init__(self, node, styles, encoding, asset_dirs):
 		self.node = node
 		self.styles = styles
 		self.canvas = None
                 self.encoding = encoding
+                self.asset_dirs = asset_dirs
 
 	def render(self, canvas, doc):
 		canvas.saveState()
-		cnv = _rml_canvas(canvas, doc, self.styles, self.encoding)
+		cnv = _rml_canvas(canvas, doc, self.styles, self.encoding, self.asset_dirs)
 		cnv.render(self.node)
 		canvas.restoreState()
 
 class _rml_flowable(object):
-	def __init__(self, doc, encoding):
+	def __init__(self, doc, encoding, asset_dirs):
 		self.doc = doc
 		self.styles = doc.styles
                 self.encoding = encoding
+                self.asset_dirs = asset_dirs
 
 	def _textual(self, node):
 		rc = ''
@@ -470,7 +484,7 @@ class _rml_flowable(object):
 				return (self.width, self.height)
 			def draw(self):
 				canvas = self.canv
-				drw = _rml_draw(self.node, self.styles, self.encoding)
+				drw = _rml_draw(self.node, self.styles, self.encoding, self.asset_dirs)
 				drw.render(self.canv, None)
 		return Illustration(node, self.styles)
 
@@ -543,8 +557,9 @@ class _rml_flowable(object):
 		return story
 
 class _rml_template(object):
-	def __init__(self, out, node, doc, encoding):
+	def __init__(self, out, node, doc, encoding, asset_dirs):
                 self.encoding = encoding
+                self.asset_dirs = asset_dirs
 		if not node.hasAttribute('pageSize'):
 			pageSize = (utils.unit_get('21cm'), utils.unit_get('29.7cm'))
 		else:
@@ -563,21 +578,21 @@ class _rml_template(object):
 				frames.append( frame )
 			gr = pt.getElementsByTagName('pageGraphics')
 			if len(gr):
-				drw = _rml_draw(gr[0], self.doc, self.encoding)
+				drw = _rml_draw(gr[0], self.doc, self.encoding, self.asset_dirs)
 				self.page_templates.append( platypus.PageTemplate(frames=frames, onPage=drw.render, **utils.attr_get(pt, [], {'id':'str'}) ))
 			else:
 				self.page_templates.append( platypus.PageTemplate(frames=frames, **utils.attr_get(pt, [], {'id':'str'}) ))
 		self.doc_tmpl.addPageTemplates(self.page_templates)
 
 	def render(self, node_story):
-		r = _rml_flowable(self.doc, self.encoding)
+		r = _rml_flowable(self.doc, self.encoding, self.asset_dirs)
 		fis = r.render(node_story)
 		self.doc_tmpl.build(fis)
 
-def parseString(data, fout=None, encoding=None):
+def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
         if encoding is None:
             encoding = 'latin-1'
-	r = _rml_doc(data, encoding)
+	r = _rml_doc(data, encoding, asset_dirs)
 	if fout:
 		fp = file(fout,'wb')
 		r.render(fp)
