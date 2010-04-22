@@ -57,7 +57,9 @@ class NamedString(platypus.Flowable):
     def draw(self):
         strings = []
         for child in self.node.childNodes:
-            if child.localName == 'evalString':
+            if child.localName == 'pageNumber':
+                strings.append(unicode(self.canv.getPageNumber()))
+            elif child.localName == 'evalString':
                 strings.append(_eval_string(child, self.flowable))
             elif child.nodeType is not self.node.TEXT_NODE:
                 strings.append(u''.join([unicode(el) for el in self.flowable.render(child)]))
@@ -676,7 +678,7 @@ def _eval_string(node, flowable=None, textual=None):
 
 def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
         if encoding is None:
-            encoding = 'utf-8'
+            encoding = 'latin-1'
         sequencer = reportlab.lib.sequencer.getSequencer()
         # The sequencer doesn't reset itself. Very bad for a web environment!
         sequencer._counters = {}
@@ -693,7 +695,7 @@ def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
 		return fp.getvalue()
 
 def trml2pdf_help():
-	print 'Usage: trml2pdf input.rml [encoding] > output.pdf'
+	print 'Usage: trml2pdf input.rml >output.pdf'
 	print 'Render the standard input (RML) and output a PDF file'
 	sys.exit(0)
 
@@ -704,5 +706,5 @@ if __name__=="__main__":
                 encoding = sys.argv[2] if len(sys.argv) > 2 else None
 		print parseString(file(sys.argv[1], 'r').read(), encoding=encoding),
 	else:
-		print 'Usage: trml2pdf input.rml [encoding] > output.pdf'
+		print 'Usage: trml2pdf input.rml >output.pdf'
 		print 'Try \'trml2pdf --help\' for more information.'
