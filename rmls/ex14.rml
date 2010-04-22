@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!DOCTYPE document SYSTEM "rml.dtd">
+<document filename="example_14.pdf">
+    <template pageSize="(21cm, 29cm)">
+        <pageTemplate id="main">
+            <pageGraphics>
+                <drawCentredString x="10cm" y="20cm">Page <pageNumber /> of <name id="pageCount" x="11cm" y="20cm" /></drawCentredString>
+            </pageGraphics>
+            <frame id="first" x1="0cm" y1="0cm" width="21cm" height="29cm" />
+        </pageTemplate>
+    </template>
+
+    <stylesheet>
+    </stylesheet>
+
+    <story>
+        <para>Hello</para>
+        <nextFrame />
+        <para>Goodbye</para>
+        <namedString id="pageCount"><pageNumber /></namedString>
+    </story>
+</document>

@@ -47,6 +47,9 @@ import utils
 import color
 
 
+named_string_styles = {}
+
+
 class NamedString(platypus.Flowable):
     def __init__(self, name, node, flowable):
         self.name = name
@@ -67,8 +70,22 @@ class NamedString(platypus.Flowable):
                 strings.append(child.data)
         string = u''.join(strings)
         self.canv.beginForm(self.name)
+        global named_string_styles
+        style = named_string_styles[self.name]
+        oldFontName, oldFontSize = self.canv._fontname, self.canv._fontsize
+        fillColorObj = self.canv._fillColorObj
+        self.canv.setFont(style[0], int(style[1]))
+        split_color = style[2].split(',')
+        if len(split_color) == 1:
+            self.canv.setFillColor(style[2])
+        elif len(split_color) == 3:
+            self.canv.setFillColorRGB(*split_color)
+        elif len(split_color) == 4:
+            self.canv.setFillColorCMYK(*split_color)
         self.canv.drawString(0, 0, string)
         self.canv.endForm()
+        self.canv.setFont(oldFontName, oldFontSize)
+        self.canv._fillColorObj = fillColorObj
 
 
 def _child_get(node, childs):
@@ -228,6 +245,16 @@ class _rml_canvas(object):
                                         rc += str(_rml_sequence(n))
                                 elif n.localName == 'name':
                                         x, y = n.getAttribute('x'), n.getAttribute('y')
+                                        fontName, fontSize, fontColor = n.getAttribute('fontName'), n.getAttribute('fontSize'), n.getAttribute('fontColor')
+                                        print fontName, fontSize, fontColor
+                                        if not fontName:
+                                            fontName = self.canvas._fontname
+                                        if not fontSize:
+                                            fontSize = self.canvas._fontsize
+                                        global named_string_styles
+                                        named_string_styles[n.getAttribute('id')] = (
+                                            fontName, fontSize, fontColor
+                                        )
                                         if x and y:
                                             x, y = utils.unit_get(x), utils.unit_get(y)
                                             self.canvas.translate(x, y)

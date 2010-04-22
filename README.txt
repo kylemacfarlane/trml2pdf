@@ -36,10 +36,15 @@ Create a PDF file:
 
 	trml2pdf <input.rml
 
+or:
+
+        trml2pdf utf-8 <input.rml
+
 Use it as a python module:
 
 	import trml2pdf
-	print trml2pdf.parseString(file('file.rml','r').read())
+	print trml2pdf.parseString(file('file.rml','r').read(),
+                                   encoding='utf-8')
 
 Notes
 -----
@@ -48,7 +53,16 @@ Tiny RML2PDF is a component of the Open Report project. It can be used with the
 Tiny Reporting Server to have a complete solution to render PDF file on the
 fly.
 
-Author
+The implementations of sequences, named strings, forward look ups, eval string,
+and more is severely limited and basically is only implemented as far as needed
+to achieve the popular "page x of y" output.
+
+Check rmls/ex14.rml for a simple example of page numbers, or rmls/ex15.rml for
+a more complex example using sequences so that the page number can be reset
+during bulk generation.
+
+Authors
 ------
 
 Fabien Pinckaers (http://tiny.be)
+Kyle MacFarlane
