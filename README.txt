@@ -57,6 +57,12 @@ The implementations of sequences, named strings, forward look ups, eval string,
 and more is severely limited and basically is only implemented as far as needed
 to achieve the popular "page x of y" output.
 
+Due to the hacky way that forward references are implemented, they do not
+inherit the styling around them. For this reason the <name> tag has
+x and y attributes to place it, plus fontName, fontSize and fontColor to
+style it. If your template is not too complicated then probably only x
+and y will be required.
+
 Check rmls/ex14.rml for a simple example of page numbers, or rmls/ex15.rml for
 a more complex example using sequences so that the page number can be reset
 during bulk generation.

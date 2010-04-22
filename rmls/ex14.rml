@@ -4,7 +4,8 @@
     <template pageSize="(21cm, 29cm)">
         <pageTemplate id="main">
             <pageGraphics>
-                <drawCentredString x="10cm" y="20cm">Page <pageNumber /> of <name id="pageCount" x="11cm" y="20cm" /></drawCentredString>
+                <setFont name="Courier" size="20" />
+                <drawCentredString x="10cm" y="20cm">Page <pageNumber /> of <name id="pageCount" x="12.2cm" y="20cm" fontSize="20" fontName="Courier" color="red" /></drawCentredString>
             </pageGraphics>
             <frame id="first" x1="0cm" y1="0cm" width="21cm" height="29cm" />
         </pageTemplate>
