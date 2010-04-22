@@ -76,12 +76,13 @@ class NamedString(platypus.Flowable):
         fillColorObj = self.canv._fillColorObj
         self.canv.setFont(style[0], int(style[1]))
         split_color = style[2].split(',')
-        if len(split_color) == 1:
-            self.canv.setFillColor(style[2])
-        elif len(split_color) == 3:
-            self.canv.setFillColorRGB(*split_color)
-        elif len(split_color) == 4:
-            self.canv.setFillColorCMYK(*split_color)
+        if style[2]:
+            if len(split_color) == 1:
+                self.canv.setFillColor(style[2])
+            elif len(split_color) == 3:
+                self.canv.setFillColorRGB(*split_color)
+            elif len(split_color) == 4:
+                self.canv.setFillColorCMYK(*split_color)
         self.canv.drawString(0, 0, string)
         self.canv.endForm()
         self.canv.setFont(oldFontName, oldFontSize)
