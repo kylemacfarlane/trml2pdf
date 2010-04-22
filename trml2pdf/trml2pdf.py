@@ -693,7 +693,7 @@ def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
 		return fp.getvalue()
 
 def trml2pdf_help():
-	print 'Usage: trml2pdf input.rml >output.pdf'
+	print 'Usage: trml2pdf input.rml [encoding] > output.pdf'
 	print 'Render the standard input (RML) and output a PDF file'
 	sys.exit(0)
 
@@ -704,5 +704,5 @@ if __name__=="__main__":
                 encoding = sys.argv[2] if len(sys.argv) > 2 else None
 		print parseString(file(sys.argv[1], 'r').read(), encoding=encoding),
 	else:
-		print 'Usage: trml2pdf input.rml >output.pdf'
+		print 'Usage: trml2pdf input.rml [encoding] > output.pdf'
 		print 'Try \'trml2pdf --help\' for more information.'
