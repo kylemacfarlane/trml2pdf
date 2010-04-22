@@ -46,6 +46,29 @@ except ImportError:
 import utils
 import color
 
+
+class NamedString(platypus.Flowable):
+    def __init__(self, name, node, flowable):
+        self.name = name
+        self.node = node
+        platypus.Flowable.__init__(self)
+        self.flowable = flowable
+
+    def draw(self):
+        strings = []
+        for child in self.node.childNodes:
+            if child.localName == 'evalString':
+                strings.append(_eval_string(child, self.flowable))
+            elif child.nodeType is not self.node.TEXT_NODE:
+                strings.append(u''.join([unicode(el) for el in self.flowable.render(child)]))
+            else:
+                strings.append(child.data)
+        string = u''.join(strings)
+        self.canv.beginForm(self.name)
+        self.canv.drawString(0, 0, string)
+        self.canv.endForm()
+
+
 def _child_get(node, childs):
 	clds = []
 	for n in node.childNodes:
@@ -201,8 +224,18 @@ class _rml_canvas(object):
 			if n.nodeType == n.ELEMENT_NODE:
                                 if n.localName.startswith('seq'):
                                         rc += str(_rml_sequence(n))
+                                elif n.localName == 'name':
+                                        x, y = n.getAttribute('x'), n.getAttribute('y')
+                                        if x and y:
+                                            x, y = utils.unit_get(x), utils.unit_get(y)
+                                            self.canvas.translate(x, y)
+                                        self.canvas.doForm(n.getAttribute('id'))
+                                        if x and y:
+                                            self.canvas.translate(-x, -y)
 				elif n.localName=='pageNumber':
 					rc += str(self.canvas.getPageNumber())
+                                elif n.localName == 'evalString':
+                                        rc += _eval_string(n, textual=self)
 			elif (n.nodeType == node.CDATA_SECTION_NODE):
 				rc += n.data
 			elif (n.nodeType == node.TEXT_NODE):
@@ -398,7 +431,9 @@ class _rml_flowable(object):
 	def _textual(self, node):
 		rc = ''
 		for n in node.childNodes:
-			if n.nodeType == node.ELEMENT_NODE:
+                        if n.localName == 'evalString':
+                                rc += _eval_string(n, flowable=self)
+			elif n.nodeType == node.ELEMENT_NODE:
 				if n.localName=='getName':
 					newNode = self.doc.dom.createTextNode(self.styles.names.get(n.getAttribute('id'),'Unknown name'))
 					node.insertBefore(newNode, n)
@@ -494,9 +529,9 @@ class _rml_flowable(object):
 	def _flowable(self, node):
 		if node.localName=='para':
 			style = self.styles.para_style_get(node)
-			return platypus.Paragraph(self._textual(node), style, **(utils.attr_get(node, [], {'bulletText':'str'})))
+                        return platypus.Paragraph(self._textual(node), style, **(utils.attr_get(node, [], {'bulletText':'str'})))
 		elif node.localName=='name':
-			self.styles.names[ node.getAttribute('id')] = node.getAttribute('value')
+                        self.styles.names[ node.getAttribute('id')] = node.getAttribute('value')
 			return None
 		elif node.localName=='xpre':
 			style = self.styles.para_style_get(node)
@@ -546,7 +581,11 @@ class _rml_flowable(object):
 			return code(self._textual(node), **utils.attr_get(node, ['barWidth', 'barHeight']))
                 elif node.localName.startswith('seq'):
                         return _rml_sequence(node)
-		else:
+                elif node.localName == 'namedString':
+                        return NamedString(node.getAttribute('id'), node, self)
+                elif node.localName == 'evalString':
+                        return _eval_string(node, flowable=self)
+                else:
 			sys.stderr.write('Warning: flowable not yet implemented: %s !\n' % (node.localName,))
 			return None
 
@@ -599,7 +638,7 @@ def _rml_sequence(node):
     sequencer = reportlab.lib.sequencer.getSequencer()
     seq_id = node.getAttribute('id')
     if node.localName == 'seq':
-        return sequencer.next(seq_id)
+        return unicode(sequencer.next(seq_id))
     elif node.localName == 'seqDefault':
         sequencer.setDefaultCounter(seq_id)
     elif node.localName == 'seqReset':
@@ -618,6 +657,21 @@ def _rml_sequence(node):
     elif node.localName == 'seqFormat':
         sequencer.setFormat(seq_id, node.getAttribute('value'))
     return ''
+
+
+def _eval_string(node, flowable=None, textual=None):
+    strings = []
+    for child in node.childNodes:
+        if child.nodeType is not node.TEXT_NODE:
+            if flowable:
+                strings.append(u''.join([unicode(el) for el in flowable._flowable(child)]))
+            else:
+                strings.append(u''.join([unicode(el) for el in textual._textual(child)]))
+        else:
+            strings.append(child.data)
+    string = u''.join(strings)
+    # Maybe still not safe
+    return unicode(eval(string, {"__builtins__": None}, {}))
 
 
 def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
