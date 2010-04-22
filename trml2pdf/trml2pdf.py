@@ -199,7 +199,9 @@ class _rml_canvas(object):
 		rc = ''
 		for n in node.childNodes:
 			if n.nodeType == n.ELEMENT_NODE:
-				if n.localName=='pageNumber':
+                                if n.localName.startswith('seq'):
+                                        rc += str(_rml_sequence(n))
+				elif n.localName=='pageNumber':
 					rc += str(self.canvas.getPageNumber())
 			elif (n.nodeType == node.CDATA_SECTION_NODE):
 				rc += n.data
@@ -542,6 +544,8 @@ class _rml_flowable(object):
 		elif barcode_codes and node.localName=='barCode':
 			code = barcode_codes.get(node.getAttribute('code'), Code128)
 			return code(self._textual(node), **utils.attr_get(node, ['barWidth', 'barHeight']))
+                elif node.localName.startswith('seq'):
+                        return _rml_sequence(node)
 		else:
 			sys.stderr.write('Warning: flowable not yet implemented: %s !\n' % (node.localName,))
 			return None
@@ -590,10 +594,40 @@ class _rml_template(object):
 		fis = r.render(node_story)
 		self.doc_tmpl.build(fis)
 
+
+def _rml_sequence(node):
+    sequencer = reportlab.lib.sequencer.getSequencer()
+    seq_id = node.getAttribute('id')
+    if node.localName == 'seq':
+        return sequencer.next(seq_id)
+    elif node.localName == 'seqDefault':
+        sequencer.setDefaultCounter(seq_id)
+    elif node.localName == 'seqReset':
+        sequencer.reset(seq_id)
+    elif node.localName == 'seqChain':
+        orders = node.getAttribute('order', '').split(' ')
+        i = 0
+        for order in orders:
+            if not order:
+                break
+            try:
+                sequencer.chain(order, order[i + 1])
+            except KeyError:
+                break
+            i += 1
+    elif node.localName == 'seqFormat':
+        sequencer.setFormat(seq_id, node.getAttribute('value'))
+    return ''
+
+
 def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
         if encoding is None:
             encoding = 'latin-1'
-	r = _rml_doc(data, encoding, asset_dirs)
+        sequencer = reportlab.lib.sequencer.getSequencer()
+        # The sequencer doesn't reset itself. Very bad for a web environment!
+        sequencer._counters = {}
+        sequencer._defaultCounter = None
+        r = _rml_doc(data, encoding, asset_dirs)
 	if fout:
 		fp = file(fout,'wb')
 		r.render(fp)
