@@ -29,7 +29,7 @@ for dirpath, dirnames, filenames in os.walk(package_dir):
  
 setup(
     name = 'trml2pdf',
-    version = '0.1',
+    version = '0.2',
     description = 'Tiny RML2PDF is a tool to easily create PDF document without programming.',
     keywords = 'django apps pdf reportlab',
     license = 'GNU LESSER GENERAL PUBLIC LICENSE',
