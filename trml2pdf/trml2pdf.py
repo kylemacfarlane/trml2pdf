@@ -247,7 +247,6 @@ class _rml_canvas(object):
                                 elif n.localName == 'name':
                                         x, y = n.getAttribute('x'), n.getAttribute('y')
                                         fontName, fontSize, fontColor = n.getAttribute('fontName'), n.getAttribute('fontSize'), n.getAttribute('fontColor')
-                                        print fontName, fontSize, fontColor
                                         if not fontName:
                                             fontName = self.canvas._fontname
                                         if not fontSize:
