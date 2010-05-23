@@ -197,17 +197,26 @@ class _rml_doc(object):
 	def docinit(self, els):
 		from reportlab.lib.fonts import addMapping
 		from reportlab.pdfbase import pdfmetrics
-		from reportlab.pdfbase.ttfonts import TTFont
 
 		for node in els:
 			for font in node.getElementsByTagName('registerFont'):
 				name = font.getAttribute('fontName').encode('ascii')
 				fname = font.getAttribute('fontFile').encode('ascii')
-				pdfmetrics.registerFont(TTFont(name, fname ))
+                                ttfont = self._load_font(name, fname)
+				pdfmetrics.registerFont(ttfont)
 				addMapping(name, 0, 0, name)    #normal
 				addMapping(name, 0, 1, name)    #italic
 				addMapping(name, 1, 0, name)    #bold
 				addMapping(name, 1, 1, name)    #italic and bold
+
+        def _load_font(self, name, file):
+		from reportlab.pdfbase.ttfonts import TTFError, TTFont
+                for path in self.asset_dirs:
+                    try:
+                        return TTFont(name, os.path.join(path, file))
+                    except TTFError:
+                        pass
+                raise TTFError("Unable to find the file '%s' on any of the following paths: %s" % (file , self.asset_dirs))
 
 	def render(self, out):
 		el = self.dom.documentElement.getElementsByTagName('docinit')
