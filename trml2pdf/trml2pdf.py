@@ -484,7 +484,7 @@ class _rml_flowable(object):
 			elif (n.nodeType == node.CDATA_SECTION_NODE):
 				rc += n.data
 			elif (n.nodeType == node.TEXT_NODE):
-				rc += n.data
+				rc += n.toxml()
 		return rc.encode(self.encoding)
 
 	_cell_cmds = {
@@ -714,7 +714,7 @@ def _eval_string(node, flowable=None, textual=None):
 
 def parseString(data, fout=None, encoding=None, asset_dirs=('',)):
         if encoding is None:
-            encoding = 'latin-1'
+            encoding = 'utf-8'
         sequencer = reportlab.lib.sequencer.getSequencer()
         # The sequencer doesn't reset itself. Very bad for a web environment!
         sequencer._counters = {}
