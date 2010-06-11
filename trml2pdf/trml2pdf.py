@@ -484,7 +484,10 @@ class _rml_flowable(object):
 			elif (n.nodeType == node.CDATA_SECTION_NODE):
 				rc += n.data
 			elif (n.nodeType == node.TEXT_NODE):
-				rc += n.toxml()
+                                if node.localName in ('para', 'xpre'):
+                                    rc += n.toxml()
+                                else:
+                                    rc += n.data
 		return rc.encode(self.encoding)
 
 	_cell_cmds = {
