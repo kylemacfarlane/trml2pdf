@@ -195,21 +195,26 @@ class _rml_doc(object):
                 self.asset_dirs = asset_dirs
 
 	def docinit(self, els):
-		from reportlab.lib.fonts import addMapping
+                from reportlab.lib import fonts
 		from reportlab.pdfbase import pdfmetrics
 
 		for node in els:
-			for font in node.getElementsByTagName('registerFont'):
-				name = font.getAttribute('fontName').encode('ascii')
-				fname = font.getAttribute('fontFile').encode('ascii')
-                                ttfont = self._load_font(name, fname)
-				pdfmetrics.registerFont(ttfont)
-				addMapping(name, 0, 0, name)    #normal
-				addMapping(name, 0, 1, name)    #italic
-				addMapping(name, 1, 0, name)    #bold
-				addMapping(name, 1, 1, name)    #italic and bold
+                    for font in node.getElementsByTagName('registerTTFont'):
+                        ttfont = self._load_ttfont(
+                            font.getAttribute('faceName'),
+                            font.getAttribute('fileName')
+                        )
+                        pdfmetrics.registerFont(ttfont)
+                    for family in node.getElementsByTagName('registerFontFamily'):
+                        pdfmetrics.registerFontFamily(
+                            family.getAttribute('normal'),
+                            normal=family.getAttribute('normal'),
+                            bold=family.getAttribute('bold'),
+                            italic=family.getAttribute('italic'),
+                            boldItalic=family.getAttribute('boldItalic')
+                        )
 
-        def _load_font(self, name, file):
+        def _load_ttfont(self, name, file):
 		from reportlab.pdfbase.ttfonts import TTFError, TTFont
                 for path in self.asset_dirs:
                     try:
